@@ -14,7 +14,7 @@ from ibot.messages_ui import probe_messages_ui
 from ibot.send import check_automation, test_send
 from ibot.typewrite import edit_last_outgoing_message
 
-from ibot.state import STATE_FILE, load_state, save_state
+from ibot.state import get_state_file, load_state, save_state
 
 DEFAULT_POLL_SECONDS = 0.5
 
@@ -81,9 +81,15 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
 
+    from ibot.paths import ensure_env_file, ensure_script_hub
+
+    ensure_env_file()
+    ensure_script_hub()
+
     if args.reset_state:
-        if STATE_FILE.exists():
-            STATE_FILE.unlink()
+        state_path = get_state_file()
+        if state_path.exists():
+            state_path.unlink()
             print("Cleared .state.json")
         else:
             print("No state file to clear")

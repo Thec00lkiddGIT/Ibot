@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
-VERSION="${IBOT_VERSION:-1.0.0}"
+VERSION="${IBOT_VERSION:-1.0.2}"
 DMG_NAME="Ibot-${VERSION}.dmg"
 STAGING="$DIST/dmg-staging"
 

@@ -32,6 +32,20 @@ macOS iMessage selfbot. Watches your local Messages database and replies through
 
 2. **Automation** - macOS will prompt the first time the bot sends a message. Allow **Terminal** (or your runner) to control **Messages**.
 
+3. **API keys (`.env`)** - created automatically on first launch:
+
+   ```
+   ~/Library/Application Support/Ibot/.env
+   ```
+
+   Open Ibot → **Permissions** → **Edit .env**, or in Terminal:
+
+   ```bash
+   open -e ~/Library/Application\ Support/Ibot/.env
+   ```
+
+   Dev installs can still use a project-root `.env`; it is copied to Application Support the first time the app runs.
+
 ## Run
 
 Run from **Terminal.app** (with FDA on Terminal) or **Cursor** (with FDA on Cursor):
@@ -129,7 +143,7 @@ GoGuardian
 46 filters · 12 blocked
 ```
 
-Copy `.env.example` to `.env` and set `C99_WEATHER_KEY` (already configured if you use the provided key locally).
+Copy `.env.example` values into Application Support (see above). For dev clones, you can copy `.env.example` to `.env` in the project folder.
 
 Example:
 

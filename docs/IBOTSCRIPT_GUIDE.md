@@ -14,7 +14,7 @@
 > ```
 > `bot` shows up automatically when your script loads. Don't import it yourself.
 
-> **Where scripts live:** `scripts/hub/` in your Ibot folder, or the **Script Hub** tab in the app.
+> **Where scripts live:** `~/Library/Application Support/Ibot/scripts/hub/` (or the **Script Hub** tab). Seeded from the app on first launch.
 
 ## 2. Script structure
 
@@ -83,7 +83,7 @@ value = getConfigData().get("my_key", "default")
 updateConfigData("my_key", "new_value")
 ```
 
-- Saved per script in `scripts/hub/config.json`
+- Saved per script in `~/Library/Application Support/Ibot/scripts/hub/config.json`
 - Use clear keys like `myscript_debug`, not just `debug`
 - Always pass a default with `.get(key, default)`
 
@@ -110,7 +110,7 @@ def save_data(data):
         json.dump(data, f, indent=2)
 ```
 
-Store JSON under `scripts/hub/json/`.
+Store JSON under `~/Library/Application Support/Ibot/scripts/hub/json/`.
 
 ### 4.3 Commands (`@bot.command`)
 
@@ -265,4 +265,4 @@ For anything new, use `@ibotScript` + `@bot.command`.
 
 ---
 
-**On disk:** `scripts/hub/manifest.json` (info about each script) and `scripts/hub/<id>.py` (your code)
+**On disk:** `~/Library/Application Support/Ibot/` (`.env`, settings, Script Hub scripts)

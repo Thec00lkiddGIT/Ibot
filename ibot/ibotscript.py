@@ -12,32 +12,41 @@ from typing import Any, Callable
 
 from ibot.db import IncomingMessage
 
-HUB_DIR = Path(__file__).resolve().parents[1] / "scripts" / "hub"
-JSON_DIR = HUB_DIR / "json"
-CONFIG_FILE = HUB_DIR / "config.json"
+from ibot.paths import ensure_script_hub, hub_dir
+
+JSON_DIR_NAME = "json"
+
+
+def _hub() -> Path:
+    return ensure_script_hub()
+
+
+def _config_file() -> Path:
+    return _hub() / "config.json"
+
 
 _current_script_id: str | None = None
 
 
 def getScriptsPath() -> str:
     """Return the Script Hub directory."""
-    HUB_DIR.mkdir(parents=True, exist_ok=True)
-    return str(HUB_DIR)
+    return str(_hub())
 
 
 def _load_config_file() -> dict:
-    if not CONFIG_FILE.exists():
+    path = _config_file()
+    if not path.exists():
         return {}
     try:
-        data = json.loads(CONFIG_FILE.read_text())
+        data = json.loads(path.read_text())
         return data if isinstance(data, dict) else {}
     except (json.JSONDecodeError, OSError):
         return {}
 
 
 def _save_config_file(data: dict) -> None:
-    HUB_DIR.mkdir(parents=True, exist_ok=True)
-    CONFIG_FILE.write_text(json.dumps(data, indent=2) + "\n")
+    _hub().mkdir(parents=True, exist_ok=True)
+    _config_file().write_text(json.dumps(data, indent=2) + "\n")
 
 
 def _script_prefix() -> str:

@@ -1,23 +1,21 @@
-"""Load config from environment / .env (project root)."""
+"""Load config from ~/Library/Application Support/Ibot/.env"""
 
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-_ROOT = Path(__file__).resolve().parents[1]
-_ENV_LOADED = False
+from ibot.paths import ensure_env_file, env_file
+
+
+def config_env_path() -> str:
+    return str(env_file())
 
 
 def _load_dotenv() -> None:
-    global _ENV_LOADED
-    if _ENV_LOADED:
+    path = ensure_env_file()
+    if not path.is_file():
         return
-    _ENV_LOADED = True
-    env_path = _ROOT / ".env"
-    if not env_path.exists():
-        return
-    for line in env_path.read_text().splitlines():
+    for line in path.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
@@ -33,7 +31,7 @@ def weather_api_key() -> str:
     key = os.environ.get("C99_WEATHER_KEY", "").strip()
     if not key:
         raise ValueError(
-            "Missing C99_WEATHER_KEY. Add it to .env (see .env.example)."
+            f"Missing C99_WEATHER_KEY. Edit {config_env_path()}"
         )
     return key
 
@@ -43,7 +41,7 @@ def glseries_api_token() -> str:
     token = os.environ.get("GLSERIES_TOKEN", "").strip()
     if not token:
         raise ValueError(
-            "Missing GLSERIES_TOKEN. Add it to .env (see .env.example)."
+            f"Missing GLSERIES_TOKEN. Edit {config_env_path()}"
         )
     return token
 
@@ -58,7 +56,7 @@ def serpapi_key() -> str:
     key = os.environ.get("SERPAPI_KEY", "").strip()
     if not key:
         raise ValueError(
-            "Missing SERPAPI_KEY. Add it to .env (see .env.example)."
+            f"Missing SERPAPI_KEY. Edit {config_env_path()}"
         )
     return key
 
@@ -68,6 +66,6 @@ def api_ninjas_key() -> str:
     key = os.environ.get("API_NINJAS_KEY", "").strip()
     if not key:
         raise ValueError(
-            "Missing API_NINJAS_KEY. Add it to .env (see .env.example)."
+            f"Missing API_NINJAS_KEY. Edit {config_env_path()}"
         )
     return key

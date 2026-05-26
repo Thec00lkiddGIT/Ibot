@@ -566,6 +566,12 @@ code {
   flex-shrink: 0;
 }
 
+.small-path {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
 .cmd-tag {
   font-size: 0.7rem;
   padding: 2px 8px;

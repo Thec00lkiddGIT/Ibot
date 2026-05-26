@@ -9,7 +9,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from ibot.config import config_env_path
 from ibot.hostinfo import computer_handle
+from ibot.paths import app_support_dir, ensure_env_file
 
 from ibot.gui.commands_list import COMMANDS
 from ibot.runtime import BotRuntime, get_runtime
@@ -55,11 +57,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
         path = parsed.path
 
         if path == "/api/status":
+            ensure_env_file()
             rt = get_runtime()
             st = rt.status()
             st["display_name"] = os.environ.get("IBOT_DISPLAY_NAME", "Ibot")
             st["handle"] = computer_handle()
-            st["version"] = "1.0.0"
+            st["version"] = "1.0.2"
+            st["env_path"] = config_env_path()
+            st["app_support"] = str(app_support_dir())
             built_ins = [{"name": n, "help": h, "source": "builtin"} for n, h in COMMANDS]
             hub = []
             for s in list_scripts():
@@ -224,6 +229,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
             ok = open_fda_settings()
             _json_response(self, 200, {"ok": ok})
+            return
+
+        if action == "open_env":
+            from ibot.paths import open_env_in_editor
+
+            ok = open_env_in_editor()
+            _json_response(self, 200, {"ok": ok, "path": config_env_path()})
             return
 
         _json_response(self, 400, {"ok": False, "error": "unknown action"})

@@ -27,10 +27,18 @@ from ibot.ibotscript import (
     updateConfigData,
 )
 
-HUB_DIR = Path(__file__).resolve().parents[1] / "scripts" / "hub"
-MANIFEST_FILE = HUB_DIR / "manifest.json"
+from ibot.paths import ensure_script_hub
+
 COMMAND_RE = re.compile(r"^[a-z][a-z0-9_]{1,31}$")
 BUILTIN_NAMES = frozenset(name for name, _ in COMMANDS)
+
+
+def _hub() -> Path:
+    return ensure_script_hub()
+
+
+def _manifest() -> Path:
+    return _hub() / "manifest.json"
 
 SCRIPT_TEMPLATE = '''"""IbotScript hub script for iMessage."""
 
@@ -106,16 +114,18 @@ def _now_iso() -> str:
 
 
 def _ensure_hub() -> None:
-    HUB_DIR.mkdir(parents=True, exist_ok=True)
-    (HUB_DIR / "json").mkdir(parents=True, exist_ok=True)
-    if not MANIFEST_FILE.exists():
-        MANIFEST_FILE.write_text(json.dumps({"scripts": []}, indent=2) + "\n")
+    hub = _hub()
+    (hub / "json").mkdir(parents=True, exist_ok=True)
+    manifest = _manifest()
+    if not manifest.exists():
+        manifest.write_text(json.dumps({"scripts": []}, indent=2) + "\n")
 
 
 def _load_manifest() -> list[dict]:
     _ensure_hub()
+    manifest = _manifest()
     try:
-        data = json.loads(MANIFEST_FILE.read_text())
+        data = json.loads(manifest.read_text())
     except (json.JSONDecodeError, OSError):
         return []
     scripts = data.get("scripts")
@@ -124,18 +134,19 @@ def _load_manifest() -> list[dict]:
 
 def _save_manifest(scripts: list[dict]) -> None:
     _ensure_hub()
-    MANIFEST_FILE.write_text(json.dumps({"scripts": scripts}, indent=2) + "\n")
+    _manifest().write_text(json.dumps({"scripts": scripts}, indent=2) + "\n")
 
 
 def _script_path(script_id: str) -> Path:
     safe = re.sub(r"[^a-zA-Z0-9_-]", "", script_id)
-    return HUB_DIR / f"{safe}.py"
+    return _hub() / f"{safe}.py"
 
 
 def _manifest_mtime() -> float:
-    if not MANIFEST_FILE.exists():
+    manifest = _manifest()
+    if not manifest.exists():
         return 0.0
-    mt = MANIFEST_FILE.stat().st_mtime
+    mt = manifest.stat().st_mtime
     for entry in _load_manifest():
         sid = str(entry.get("id", ""))
         p = _script_path(sid)

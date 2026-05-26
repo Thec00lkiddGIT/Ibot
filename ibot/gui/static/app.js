@@ -130,6 +130,22 @@ function renderFdaCard(s) {
   </div>`;
 }
 
+function renderConfigCard(s) {
+  const envPath = s.env_path || "";
+  const support = s.app_support || "";
+  if (!envPath && !support) return "";
+  return `<div class="perm-card ok">
+    <h4>Config &amp; data</h4>
+    <p>API keys and saved data live in Application Support (created automatically on first launch).</p>
+    <div class="fda-path-row">
+      <input type="text" class="fda-path" readonly value="${escapeHtml(envPath)}" aria-label="Env file path" />
+      <button type="button" class="btn ghost env-open">Edit .env</button>
+      <button type="button" class="btn ghost env-copy" data-path="${escapeHtml(envPath)}">Copy path</button>
+    </div>
+    <p class="muted small-path">${support ? "Folder: " + escapeHtml(support) : ""}</p>
+  </div>`;
+}
+
 function setupFdaButtons(root) {
   root.querySelector(".fda-copy")?.addEventListener("click", async (e) => {
     const path = e.currentTarget.dataset.path || "";
@@ -145,6 +161,21 @@ function setupFdaButtons(root) {
   });
   root.querySelector(".fda-open")?.addEventListener("click", async () => {
     await postControl({ action: "open_fda" });
+  });
+  root.querySelector(".env-open")?.addEventListener("click", async () => {
+    await postControl({ action: "open_env" });
+  });
+  root.querySelector(".env-copy")?.addEventListener("click", async (e) => {
+    const path = e.currentTarget.dataset.path || "";
+    try {
+      await copyText(path);
+      e.currentTarget.textContent = "Copied!";
+      setTimeout(() => {
+        e.currentTarget.textContent = "Copy path";
+      }, 1500);
+    } catch (_) {
+      /* ignore */
+    }
   });
 }
 
@@ -235,6 +266,7 @@ function applyStatus(s) {
   if (perms) {
     perms.innerHTML =
       renderFdaCard(s) +
+      renderConfigCard(s) +
       `<div class="perm-card ${s.automation_ok ? "ok" : "bad"}">
         <h4>Automation (Messages)</h4>
         <p>${escapeHtml(s.automation_msg || "")}</p>

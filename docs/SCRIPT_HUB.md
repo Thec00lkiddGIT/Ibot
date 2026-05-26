@@ -1,15 +1,30 @@
 # Ibot Script Hub
 
-Script Hub is where you add your own iMessage commands without touching Ibot's core code. Scripts sit in `scripts/hub/` and show up under the **Script Hub** tab.
+Script Hub is where you add your own iMessage commands. User scripts are stored in Application Support (not inside the app bundle).
 
 > Full guide: **`docs/IBOTSCRIPT_GUIDE.md`**
 
 ## Quick start
 
-1. Open Ibot and go to **Script Hub** (wrench icon in the sidebar).
+1. Open Ibot and go to **Script Hub** (wrench icon).
 2. Click **New script**, fill in the name and command.
 3. Edit the Python, hit **Save to hub**.
 4. With the bot **Running**, send `!yourcommand` in iMessage.
+
+## Where files live
+
+```
+~/Library/Application Support/Ibot/
+  .env                 # API keys (auto-created)
+  .state.json          # poll watermark
+  .gui_settings.json   # dashboard toggles
+  scripts/hub/         # your Script Hub scripts
+    manifest.json
+    echo.py
+    json/
+```
+
+The app creates this folder on first launch. You can edit `.env` from **Permissions → Edit .env**.
 
 ## IbotScript format (recommended)
 
@@ -28,51 +43,22 @@ hello_script()
 
 ## Legacy `run(args)` format
 
-Still works for simple scripts:
-
-```python
-def run(args: str) -> str | list[str]:
-    name = args.strip() or "friend"
-    return f"Hello, {name}!"
-```
+Still works for simple scripts.
 
 ## Command rules
 
 | Rule | Detail |
 |------|--------|
-| Prefix | Users type `!yourcommand` - you don't add the `!` in code |
-| Name | 2-32 chars, lowercase letters/digits/underscore, starts with a letter |
-| Reserved | Built-ins (`ping`, `weather`, `youtube`, etc.) are taken |
-| Reply | Return `str` or `list[str]` for multiple bubbles |
-
-## Files on disk
-
-```
-scripts/hub/
-  manifest.json
-  echo.py
-  your_script_id.py
-  json/
-```
-
-- **manifest.json** - names, authors, enabled flags (let the app manage this)
-- **`<id>.py`** - your script code
+| Prefix | Users type `!yourcommand` |
+| Name | 2-32 chars, lowercase, starts with a letter |
+| Reserved | Built-ins are taken |
+| Reply | Return `str` or `list[str]` |
 
 ## Testing
 
 - Bot must be **Running**
 - Same Mac? Enable **React to my messages (--self)**
-- By default only **new** messages count unless **Catch up** was on before you started
-
-## If something breaks
-
-| Problem | Try this |
-|---------|----------|
-| Command does nothing | Script enabled? Name right? Bot running? |
-| "already a built-in command" | Pick another name |
-| Save fails | Fix syntax, hit **Test** first |
-| Import errors | Stick to Python stdlib when you can |
 
 ## Security
 
-Hub scripts run as you, with full Python access. Only run scripts you trust. Everything stays local in your Ibot folder.
+Hub scripts run as you with full Python access. Only run scripts you trust.
