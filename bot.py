@@ -9,7 +9,7 @@ import time
 
 from ibot.commands import dispatch
 from ibot.db import connect, fetch_batch, max_rowid
-from ibot.permissions import check_access, format_check_report
+from ibot.permissions import check_access, format_check_report, open_fda_settings
 from ibot.messages_ui import probe_messages_ui
 from ibot.send import check_automation, test_send
 from ibot.typewrite import edit_last_outgoing_message
@@ -70,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Check if Messages UI is visible to Accessibility",
     )
+    parser.add_argument(
+        "--open-fda",
+        action="store_true",
+        help="Open System Settings → Full Disk Access",
+    )
     return parser.parse_args()
 
 
@@ -82,6 +87,17 @@ def main() -> int:
             print("Cleared .state.json")
         else:
             print("No state file to clear")
+        return 0
+
+    if args.open_fda:
+        if open_fda_settings():
+            print("Opened Full Disk Access settings.")
+            report = check_access()
+            if not report.sqlite_ok:
+                print()
+                print(format_check_report(report))
+        else:
+            print("Could not open System Settings. Go to Privacy & Security → Full Disk Access manually.")
         return 0
 
     if args.check:

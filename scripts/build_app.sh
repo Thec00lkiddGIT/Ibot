@@ -49,8 +49,11 @@ BUNDLE_ROOT="$(cd "$(dirname "$0")/../Resources/Ibot" && pwd)"
 PARENT="$(dirname "$APP_DIR")"
 if [ -f "$PARENT/gui.py" ]; then
   ROOT="$PARENT"
+  export IBOT_APP_BUNDLE=0
 else
   ROOT="$BUNDLE_ROOT"
+  export IBOT_APP_BUNDLE=1
+  export IBOT_APP_PATH="$APP_DIR"
 fi
 cd "$ROOT"
 export PYTHONPATH="$ROOT${PYTHONPATH:+:$PYTHONPATH}"

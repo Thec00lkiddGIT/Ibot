@@ -4,21 +4,19 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_DB = Path.home() / "Library" / "Messages" / "chat.db"
 
-# Well-known host apps → what to add in System Settings
 HOST_HINTS: dict[str, str] = {
     "Cursor": "Cursor (/Applications/Cursor.app)",
     "Code": "Visual Studio Code (/Applications/Visual Studio Code.app)",
     "iTerm": "iTerm",
     "Warp": "Warp",
     "Terminal": "Terminal (/Applications/Utilities/Terminal.app)",
-    "Ibot": "Ibot (double-click Ibot.app on Desktop)",
-    "Python": "Python (see path below - add the interpreter running gui.py)",
 }
 
 
@@ -30,20 +28,54 @@ class AccessReport:
     sqlite_ok: bool
     host_app: str
     python: str
+    app_bundle: str | None = None
     error: str | None = None
 
 
+def is_app_bundle() -> bool:
+    if os.environ.get("IBOT_APP_BUNDLE") == "1":
+        return True
+    return "Ibot.app" in str(Path(sys.executable).resolve())
+
+
+def app_bundle_path() -> Path | None:
+    env = os.environ.get("IBOT_APP_PATH")
+    if env:
+        p = Path(env)
+        if p.is_dir():
+            return p
+    exe = Path(sys.executable).resolve()
+    for parent in exe.parents:
+        if parent.name.endswith(".app"):
+            return parent
+    return None
+
+
+def open_fda_settings() -> bool:
+    """Open macOS Full Disk Access settings (best-effort)."""
+    urls = (
+        "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_AllFiles",
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles",
+    )
+    for url in urls:
+        try:
+            result = subprocess.run(["open", url], check=False, capture_output=True)
+            if result.returncode == 0:
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def _parent_host_app() -> str:
-    """Walk up the process tree and return the first recognizable host app name."""
-    if os.environ.get("IBOT_GUI_LAUNCHED") == "1":
-        return "Ibot"
+    if is_app_bundle():
+        app = app_bundle_path()
+        return str(app) if app else "Ibot.app"
 
     if os.environ.get("TERM_PROGRAM"):
         return os.environ["TERM_PROGRAM"]
 
     try:
-        import subprocess
-
         pid = os.getpid()
         seen: set[int] = set()
         chain: list[str] = []
@@ -85,14 +117,73 @@ def _parent_host_app() -> str:
                 continue
             if "terminal" in lower:
                 return "Terminal"
-            if "ibot" in lower:
-                return "Ibot"
             if "python" in lower:
                 return "Python"
 
         return chain[-1] if chain else "unknown"
     except Exception:
         return os.environ.get("TERM_PROGRAM") or "unknown"
+
+
+def fda_target_for_host(host_app: str, *, python: str | None = None) -> str:
+    if is_app_bundle():
+        return f"Python ({python or sys.executable})"
+    lower = host_app.lower()
+    if "python" in lower:
+        return f"Python ({python or sys.executable})"
+    if "cursor" in lower:
+        return HOST_HINTS["Cursor"]
+    if "code" in lower or "vscode" in lower or "visual studio code" in lower:
+        return HOST_HINTS["Code"]
+    if "iterm" in lower:
+        return HOST_HINTS["iTerm"]
+    if "warp" in lower:
+        return HOST_HINTS["Warp"]
+    if "terminal" in lower:
+        return HOST_HINTS["Terminal"]
+    for key, label in HOST_HINTS.items():
+        if key in host_app:
+            return label
+    return f"the app running this terminal ({host_app})"
+
+
+def fda_fix_steps(*, python: str | None = None, host: str | None = None) -> list[str]:
+    py = python or sys.executable
+    host = host or _parent_host_app()
+
+    if is_app_bundle():
+        app = app_bundle_path()
+        steps = [
+            "Open System Settings → Privacy & Security → Full Disk Access",
+            "Click +, then press Cmd+Shift+G and paste this Python path:",
+            py,
+            "Turn the toggle ON for that entry",
+            "Quit Ibot completely (Cmd+Q), then reopen it",
+        ]
+        if app:
+            steps.insert(2, f"(Optional: also add {app})")
+        return steps
+
+    target = fda_target_for_host(host, python=py)
+    return [
+        "Open System Settings → Privacy & Security → Full Disk Access",
+        f"Click + and add: {target}",
+        "Turn the toggle ON",
+        "Quit that app completely (Cmd+Q), then reopen it",
+        "Run: python3 bot.py --check",
+    ]
+
+
+def fda_fix_message(*, python: str | None = None, host: str | None = None) -> str:
+    steps = fda_fix_steps(python=python, host=host)
+    intro = (
+        "macOS blocks chat.db until Full Disk Access is granted to the Python "
+        "process inside Ibot.app (adding only the app icon often is not enough)."
+        if is_app_bundle()
+        else "Full Disk Access is per-app. The app that runs Python needs access."
+    )
+    body = "\n".join(f"  {i + 1}. {step}" for i, step in enumerate(steps))
+    return f"{intro}\n\n{body}"
 
 
 def check_access(db_path: Path | None = None) -> AccessReport:
@@ -115,6 +206,7 @@ def check_access(db_path: Path | None = None) -> AccessReport:
     else:
         error = "database file not found"
 
+    bundle = app_bundle_path()
     return AccessReport(
         db_path=path,
         db_exists=exists,
@@ -122,31 +214,9 @@ def check_access(db_path: Path | None = None) -> AccessReport:
         sqlite_ok=sqlite_ok,
         host_app=_parent_host_app(),
         python=sys.executable,
+        app_bundle=str(bundle) if bundle else None,
         error=error,
     )
-
-
-def fda_target_for_host(host_app: str, *, python: str | None = None) -> str:
-    lower = host_app.lower()
-    if "ibot" in lower:
-        return HOST_HINTS["Ibot"]
-    if "python" in lower:
-        exe = python or sys.executable
-        return f"Python ({exe})"
-    if "cursor" in lower:
-        return HOST_HINTS["Cursor"]
-    if "code" in lower or "vscode" in lower or "visual studio code" in lower:
-        return HOST_HINTS["Code"]
-    if "iterm" in lower:
-        return HOST_HINTS["iTerm"]
-    if "warp" in lower:
-        return HOST_HINTS["Warp"]
-    if "terminal" in lower:
-        return HOST_HINTS["Terminal"]
-    for key, label in HOST_HINTS.items():
-        if key in host_app:
-            return label
-    return f"the app running this terminal ({host_app})"
 
 
 def format_check_report(report: AccessReport) -> str:
@@ -155,11 +225,17 @@ def format_check_report(report: AccessReport) -> str:
         "─────────────────────",
         f"  Python:     {report.python}",
         f"  Host app:   {report.host_app}",
-        f"  Database:   {report.db_path}",
-        f"  Exists:     {report.db_exists}",
-        f"  Readable:   {report.os_readable}",
-        f"  SQLite OK:  {report.sqlite_ok}",
     ]
+    if report.app_bundle:
+        lines.append(f"  App bundle: {report.app_bundle}")
+    lines.extend(
+        [
+            f"  Database:   {report.db_path}",
+            f"  Exists:     {report.db_exists}",
+            f"  Readable:   {report.os_readable}",
+            f"  SQLite OK:  {report.sqlite_ok}",
+        ]
+    )
     if report.error:
         lines.append(f"  Error:      {report.error}")
 
@@ -168,26 +244,7 @@ def format_check_report(report: AccessReport) -> str:
         lines.append("✓ Full Disk Access looks good. Run: python3 bot.py")
         return "\n".join(lines)
 
-    target = fda_target_for_host(report.host_app, python=report.python)
-    lines.extend(
-        [
-            "",
-            "✗ Cannot read chat.db",
-            "",
-            "Full Disk Access is per-app. If you enabled Terminal but run the bot",
-            "inside Cursor (or VS Code), that does NOT count - add the editor instead.",
-            "",
-            "Fix:",
-            f"  1. System Settings → Privacy & Security → Full Disk Access",
-            f"  2. Click + and add: {target}",
-            "  3. Ensure the toggle is ON",
-            "  4. Quit that app completely (Cmd+Q), then reopen it",
-            "  5. Run: python3 bot.py --check",
-            "",
-            "Or run the bot from Terminal.app (after Terminal has FDA):",
-            "  open -a Terminal",
-            f"  cd {Path(__file__).resolve().parents[1]}",
-            "  python3 bot.py",
-        ]
-    )
+    lines.extend(["", "✗ Cannot read chat.db", "", fda_fix_message(python=report.python, host=report.host_app)])
+    if is_app_bundle():
+        lines.extend(["", "Tip: run `python3 bot.py --open-fda` inside the app folder to open System Settings."])
     return "\n".join(lines)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-import sys
 
 from ibot.decode import message_text
 
@@ -71,16 +70,11 @@ def connect(db_path: Path | None = None) -> sqlite3.Connection:
     except sqlite3.OperationalError as exc:
         msg = str(exc).lower()
         if "authorization denied" in msg or "unable to open" in msg:
-            from ibot.permissions import _parent_host_app, fda_target_for_host
+            from ibot.permissions import fda_fix_message, _parent_host_app
 
             host = _parent_host_app()
-            target = fda_target_for_host(host, python=sys.executable)
             raise PermissionError(
-                f"Cannot read chat.db (host: {host}).\n"
-                f"Grant Full Disk Access to {target} in "
-                "System Settings → Privacy & Security → Full Disk Access, "
-                "then quit and reopen that app.\n"
-                "Run `python3 bot.py --check` for details."
+                f"Cannot read chat.db (host: {host}).\n\n{fda_fix_message()}"
             ) from exc
         raise
 

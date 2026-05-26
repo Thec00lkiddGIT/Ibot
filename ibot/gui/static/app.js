@@ -133,10 +133,16 @@ function applyStatus(s) {
     let msg = "";
     let kind = "error";
     if (!s.fda_ok) {
-      msg =
-        "Can't read Messages. Grant Full Disk Access to " +
-        (s.fda_target || s.fda_host || "this app") +
-        ", then quit and reopen it.";
+      if (s.fda_bundle) {
+        msg =
+          "Can't read Messages. In Full Disk Access, add this Python (Cmd+Shift+G): " +
+          (s.python || s.fda_target || "see Permissions tab");
+      } else {
+        msg =
+          "Can't read Messages. Grant Full Disk Access to " +
+          (s.fda_target || s.fda_host || "this app") +
+          ", then quit and reopen it.";
+      }
     } else if (s.error) {
       msg = s.error;
     } else if (!s.running) {
@@ -172,10 +178,15 @@ function applyStatus(s) {
   if (perms) {
     const fdaDetail = s.fda_ok
       ? "chat.db is readable."
-      : "Can't read chat.db. Add " +
-        escapeHtml(s.fda_target || s.fda_host || "this app") +
-        " in System Settings → Privacy & Security → Full Disk Access, then quit and reopen that app." +
-        (s.python ? " Python: " + escapeHtml(s.python) : "");
+      : s.fda_bundle
+        ? "Can't read chat.db. Add this Python in Full Disk Access (click +, then Cmd+Shift+G): " +
+          escapeHtml(s.python || "") +
+          ". Quit Ibot (Cmd+Q) and reopen after enabling." +
+          (s.fda_app_path ? " App: " + escapeHtml(s.fda_app_path) : "")
+        : "Can't read chat.db. Add " +
+          escapeHtml(s.fda_target || s.fda_host || "this app") +
+          " in System Settings → Privacy & Security → Full Disk Access, then quit and reopen that app." +
+          (s.python ? " Python: " + escapeHtml(s.python) : "");
     perms.innerHTML = `
       <div class="perm-card ${s.fda_ok ? "ok" : "bad"}">
         <h4>Full Disk Access</h4>
