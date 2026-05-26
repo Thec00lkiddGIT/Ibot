@@ -147,21 +147,27 @@ def fda_target_for_host(host_app: str, *, python: str | None = None) -> str:
     return f"the app running this terminal ({host_app})"
 
 
+def bundle_fda_python_path() -> str | None:
+    """Absolute Python path users should add in Full Disk Access for Ibot.app."""
+    if not is_app_bundle():
+        return None
+    return str(Path(sys.executable).resolve())
+
+
 def fda_fix_steps(*, python: str | None = None, host: str | None = None) -> list[str]:
     py = python or sys.executable
     host = host or _parent_host_app()
 
     if is_app_bundle():
-        app = app_bundle_path()
+        py = bundle_fda_python_path() or py
         steps = [
             "Open System Settings → Privacy & Security → Full Disk Access",
-            "Click +, then press Cmd+Shift+G and paste this Python path:",
+            "Click +, then press Cmd+Shift+G (Go to Folder)",
+            "Paste the FULL path below (must start with /Applications) and press Go:",
             py,
-            "Turn the toggle ON for that entry",
+            "Select python3 and click Open, then turn the toggle ON",
             "Quit Ibot completely (Cmd+Q), then reopen it",
         ]
-        if app:
-            steps.insert(2, f"(Optional: also add {app})")
         return steps
 
     target = fda_target_for_host(host, python=py)

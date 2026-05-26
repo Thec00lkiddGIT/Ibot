@@ -14,11 +14,16 @@ macOS iMessage selfbot. Watches your local Messages database and replies through
 
    **Important:** FDA is per-app. If you run the bot from **Cursor’s terminal**, add **Cursor** (`/Applications/Cursor.app`) - enabling **Terminal** alone is not enough. Quit Cursor (Cmd+Q) after changing the setting.
 
-   **Ibot.app (from the DMG):** macOS usually needs the **Python inside the app**, not just the Ibot icon. In Full Disk Access, click **+**, press **Cmd+Shift+G**, and add:
+   **Ibot.app (from the DMG):** macOS needs the **Python file inside the app**, not just the Ibot icon.
+
+   1. System Settings → Privacy & Security → Full Disk Access → **+**
+   2. Press **Cmd+Shift+G** and paste the **full** path (must start with `/Applications`):
    ```
    /Applications/Ibot.app/Contents/Resources/Ibot/.venv/bin/python3
    ```
-   Quit Ibot (Cmd+Q) and reopen.
+   3. Select **python3**, click Open, enable the toggle, then quit Ibot (Cmd+Q) and reopen.
+
+   In the app, open the **Permissions** tab and use **Copy path** if you need the exact path for your install.
 
    Verify:
    ```bash

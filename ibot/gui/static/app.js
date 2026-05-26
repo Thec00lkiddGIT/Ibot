@@ -89,6 +89,65 @@ async function pollEvents() {
   }
 }
 
+function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  return Promise.resolve();
+}
+
+function renderFdaCard(s) {
+  if (s.fda_ok) {
+    return `<div class="perm-card ok"><h4>Full Disk Access</h4><p>chat.db is readable.</p></div>`;
+  }
+  if (s.fda_bundle) {
+    const path = s.fda_python_path || s.python || "";
+    return `<div class="perm-card bad">
+      <h4>Full Disk Access</h4>
+      <p class="fda-steps">Ibot.app runs Python inside the app. Add <strong>this exact file</strong> (not a partial path):</p>
+      <ol class="fda-step-list">
+        <li>System Settings → Privacy &amp; Security → Full Disk Access</li>
+        <li>Click <strong>+</strong>, then press <strong>Cmd+Shift+G</strong></li>
+        <li>Paste the full path (starts with <code>/Applications</code>), press Go, select <code>python3</code></li>
+        <li>Quit Ibot (Cmd+Q) and reopen</li>
+      </ol>
+      <div class="fda-path-row">
+        <input type="text" class="fda-path" readonly value="${escapeHtml(path)}" aria-label="Full Disk Access path" />
+        <button type="button" class="btn ghost fda-copy" data-path="${escapeHtml(path)}">Copy path</button>
+        <button type="button" class="btn ghost fda-open">Open Settings</button>
+      </div>
+    </div>`;
+  }
+  return `<div class="perm-card bad">
+    <h4>Full Disk Access</h4>
+    <p>Can't read chat.db. Add ${escapeHtml(s.fda_target || s.fda_host || "this app")} in System Settings → Privacy &amp; Security → Full Disk Access, then quit and reopen that app.${s.python ? " Python: " + escapeHtml(s.python) : ""}</p>
+  </div>`;
+}
+
+function setupFdaButtons(root) {
+  root.querySelector(".fda-copy")?.addEventListener("click", async (e) => {
+    const path = e.currentTarget.dataset.path || "";
+    try {
+      await copyText(path);
+      e.currentTarget.textContent = "Copied!";
+      setTimeout(() => {
+        e.currentTarget.textContent = "Copy path";
+      }, 1500);
+    } catch (_) {
+      /* ignore */
+    }
+  });
+  root.querySelector(".fda-open")?.addEventListener("click", async () => {
+    await postControl({ action: "open_fda" });
+  });
+}
+
 function applyStatus(s) {
   const name = s.display_name || "Ibot";
   el("display-name").textContent = name;
@@ -134,9 +193,7 @@ function applyStatus(s) {
     let kind = "error";
     if (!s.fda_ok) {
       if (s.fda_bundle) {
-        msg =
-          "Can't read Messages. In Full Disk Access, add this Python (Cmd+Shift+G): " +
-          (s.python || s.fda_target || "see Permissions tab");
+        msg = "Full Disk Access: copy the python3 path on the Permissions tab (must start with /Applications).";
       } else {
         msg =
           "Can't read Messages. Grant Full Disk Access to " +
@@ -176,27 +233,13 @@ function applyStatus(s) {
 
   const perms = el("perm-cards");
   if (perms) {
-    const fdaDetail = s.fda_ok
-      ? "chat.db is readable."
-      : s.fda_bundle
-        ? "Can't read chat.db. Add this Python in Full Disk Access (click +, then Cmd+Shift+G): " +
-          escapeHtml(s.python || "") +
-          ". Quit Ibot (Cmd+Q) and reopen after enabling." +
-          (s.fda_app_path ? " App: " + escapeHtml(s.fda_app_path) : "")
-        : "Can't read chat.db. Add " +
-          escapeHtml(s.fda_target || s.fda_host || "this app") +
-          " in System Settings → Privacy & Security → Full Disk Access, then quit and reopen that app." +
-          (s.python ? " Python: " + escapeHtml(s.python) : "");
-    perms.innerHTML = `
-      <div class="perm-card ${s.fda_ok ? "ok" : "bad"}">
-        <h4>Full Disk Access</h4>
-        <p>${fdaDetail}</p>
-      </div>
-      <div class="perm-card ${s.automation_ok ? "ok" : "bad"}">
+    perms.innerHTML =
+      renderFdaCard(s) +
+      `<div class="perm-card ${s.automation_ok ? "ok" : "bad"}">
         <h4>Automation (Messages)</h4>
         <p>${escapeHtml(s.automation_msg || "")}</p>
-      </div>
-    `;
+      </div>`;
+    setupFdaButtons(perms);
   }
 }
 

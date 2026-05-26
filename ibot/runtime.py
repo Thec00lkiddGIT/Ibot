@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from ibot.commands import PREFIX, dispatch
 from ibot.db import connect, fetch_batch, max_rowid
-from ibot.permissions import check_access, fda_fix_message, fda_target_for_host, is_app_bundle
+from ibot.permissions import check_access, fda_fix_message, fda_target_for_host, is_app_bundle, open_fda_settings, bundle_fda_python_path
 from ibot.send import check_automation
 from ibot.state import load_gui_settings, load_state, load_stats, save_gui_settings, save_state, save_stats
 
@@ -151,6 +151,7 @@ class BotRuntime:
                 "fda_target": fda_target_for_host(access.host_app, python=access.python),
                 "fda_bundle": is_app_bundle(),
                 "fda_app_path": access.app_bundle,
+                "fda_python_path": bundle_fda_python_path() or access.python,
                 "fda_help": None if access.sqlite_ok else fda_fix_message(python=access.python, host=access.host_app),
                 "fda_error": access.error,
                 "python": access.python,

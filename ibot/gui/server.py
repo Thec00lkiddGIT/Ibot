@@ -219,6 +219,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             )
             return
 
+        if action == "open_fda":
+            from ibot.permissions import open_fda_settings
+
+            ok = open_fda_settings()
+            _json_response(self, 200, {"ok": ok})
+            return
+
         _json_response(self, 400, {"ok": False, "error": "unknown action"})
 
     def _serve_file(self, path: Path) -> None:
