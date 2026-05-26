@@ -1,4 +1,4 @@
-"""IbotScript API for custom iMessage commands (Nighty-style)."""
+"""IbotScript API for custom iMessage commands."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ _current_script_id: str | None = None
 
 
 def getScriptsPath() -> str:
-    """Return the Script Hub directory (Nighty-compatible name)."""
+    """Return the Script Hub directory."""
     HUB_DIR.mkdir(parents=True, exist_ok=True)
     return str(HUB_DIR)
 
@@ -80,7 +80,7 @@ def forwardEmbedMethod(
 
 
 def log(message: str, type_: str = "INFO") -> None:
-    """Nighty-style logging to stderr."""
+    """Log to stderr with a simple level tag."""
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     sid = _current_script_id or "script"
     print(f"[{ts}] [{sid}] [{type_}] {message}", file=sys.stderr)
@@ -196,7 +196,7 @@ def ibotScript(
     description: str = "",
     usage: str = "",
 ) -> Callable[[Callable[[], None]], Callable[[], None]]:
-    """Decorator marking the script entry point (Nighty @nightyScript equivalent)."""
+    """Decorator marking the script entry point."""
 
     def decorator(fn: Callable[[], None]) -> Callable[[], None]:
         fn.__ibot_script_meta__ = {  # type: ignore[attr-defined]
@@ -213,7 +213,3 @@ def ibotScript(
 def set_script_context(script_id: str | None) -> None:
     global _current_script_id
     _current_script_id = script_id
-
-
-# Public alias matching Nighty naming where sensible
-nightyScript = ibotScript

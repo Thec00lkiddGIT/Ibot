@@ -188,7 +188,6 @@ def _inject_module(script_id: str, path: Path) -> tuple[Any, ScriptBot]:
         {
             "bot": bot,
             "ibotScript": ibotScript,
-            "nightyScript": ibotScript,
             "getConfigData": getConfigData,
             "updateConfigData": updateConfigData,
             "getScriptsPath": getScriptsPath,

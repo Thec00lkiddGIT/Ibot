@@ -1,6 +1,6 @@
 # IbotScript Guide v1.0
 
-*Same idea as NightyScript, but for iMessage on your Mac.*
+*Custom Python commands for Ibot on your Mac.*
 
 ## 1. Overview
 
@@ -18,7 +18,7 @@
 
 ## 2. Script structure
 
-Use `@ibotScript` at the top (same role as Nighty's `@nightyScript`):
+Use `@ibotScript` at the top:
 
 ```python
 from ibot.ibotscript import ibotScript, log
@@ -110,7 +110,7 @@ def save_data(data):
         json.dump(data, f, indent=2)
 ```
 
-Keep JSON under `scripts/hub/json/`.
+Store JSON under `scripts/hub/json/`.
 
 ### 4.3 Commands (`@bot.command`)
 
@@ -240,7 +240,7 @@ greeter_script()
 
 | Button | What it does |
 |--------|----------------|
-| **New script** | Starts a Nighty-style template |
+| **New script** | Starts a starter template |
 | **Save to hub** | Checks your code and saves it |
 | **Test** | Runs the handler without sending a real iMessage |
 | **Enabled** | Off = bot ignores that script |

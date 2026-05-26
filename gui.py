@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Launch the Ibot app (native WebKit window with Nighty-style UI)."""
+"""Launch the Ibot app (native WebKit dashboard)."""
 
 from __future__ import annotations
 

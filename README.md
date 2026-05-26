@@ -32,7 +32,7 @@ python3 bot.py --verbose
 
 ### GUI app
 
-Native Nighty-style window (macOS WebKit - **not Chrome**):
+Native macOS dashboard (WebKit - **not Chrome**):
 
 ```bash
 ./scripts/setup_gui.sh          # one time
@@ -90,7 +90,7 @@ python3 bot.py --catch-up --verbose
 
 ### Script Hub (IbotScript)
 
-Same vibe as NightyScript, but for iMessage. Open **Script Hub** in the app or read **`IbotScript Guide.md`** on your Desktop.
+Write your own commands in Python. Open **Script Hub** in the app or see **`docs/IBOTSCRIPT_GUIDE.md`**.
 
 Example: `!echo hello` -> `🔊 hello` (sample in `scripts/hub/`)
 

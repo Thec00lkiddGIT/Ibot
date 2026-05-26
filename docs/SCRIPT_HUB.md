@@ -2,7 +2,7 @@
 
 Script Hub is where you add your own iMessage commands without touching Ibot's core code. Scripts sit in `scripts/hub/` and show up under the **Script Hub** tab.
 
-> For the full Nighty-style guide, see **`IbotScript Guide.md`** on your Desktop.
+> Full guide: **`docs/IBOTSCRIPT_GUIDE.md`**
 
 ## Quick start
 
@@ -12,8 +12,6 @@ Script Hub is where you add your own iMessage commands without touching Ibot's c
 4. With the bot **Running**, send `!yourcommand` in iMessage.
 
 ## IbotScript format (recommended)
-
-Same pattern as Nighty:
 
 ```python
 from ibot.ibotscript import ibotScript
