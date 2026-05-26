@@ -265,4 +265,4 @@ For anything new, use `@ibotScript` + `@bot.command`.
 
 ---
 
-**On disk:** `~/Library/Application Support/Ibot/` (`.env`, settings, Script Hub scripts)
+**On disk:** `~/Library/Application Support/Ibot/` (`config.env`, settings, Script Hub scripts)

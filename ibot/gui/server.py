@@ -62,7 +62,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             st = rt.status()
             st["display_name"] = os.environ.get("IBOT_DISPLAY_NAME", "Ibot")
             st["handle"] = computer_handle()
-            st["version"] = "1.0.2"
+            st["version"] = "1.0.3"
             st["env_path"] = config_env_path()
             st["app_support"] = str(app_support_dir())
             built_ins = [{"name": n, "help": h, "source": "builtin"} for n, h in COMMANDS]

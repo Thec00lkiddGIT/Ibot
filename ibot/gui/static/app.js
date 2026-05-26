@@ -139,7 +139,7 @@ function renderConfigCard(s) {
     <p>API keys and saved data live in Application Support (created automatically on first launch).</p>
     <div class="fda-path-row">
       <input type="text" class="fda-path" readonly value="${escapeHtml(envPath)}" aria-label="Env file path" />
-      <button type="button" class="btn ghost env-open">Edit .env</button>
+      <button type="button" class="btn ghost env-open">Edit config</button>
       <button type="button" class="btn ghost env-copy" data-path="${escapeHtml(envPath)}">Copy path</button>
     </div>
     <p class="muted small-path">${support ? "Folder: " + escapeHtml(support) : ""}</p>

@@ -1,4 +1,4 @@
-"""Load config from ~/Library/Application Support/Ibot/.env"""
+"""Load config from ~/Library/Application Support/Ibot/config.env"""
 
 from __future__ import annotations
 

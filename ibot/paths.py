@@ -33,20 +33,25 @@ def ensure_app_support() -> Path:
 
 
 def env_file() -> Path:
-    return ensure_app_support() / ".env"
+    """Visible config file (Finder hides dotfiles like .env)."""
+    return ensure_app_support() / "config.env"
 
 
 def ensure_env_file() -> Path:
-    """Create Application Support/.env from .env.example if missing."""
+    """Create Application Support/config.env on first launch."""
     ensure_app_support()
     path = env_file()
     if path.exists():
         return path
 
+    support = app_support_dir()
+    hidden = support / ".env"
     example = project_root() / ".env.example"
     legacy = project_root() / ".env"
 
-    if legacy.is_file() and legacy.resolve() != path.resolve():
+    if hidden.is_file():
+        shutil.copy2(hidden, path)
+    elif legacy.is_file() and legacy.resolve() != path.resolve():
         shutil.copy2(legacy, path)
     elif example.is_file():
         path.write_text(example.read_text())

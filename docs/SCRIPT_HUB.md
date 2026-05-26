@@ -15,7 +15,7 @@ Script Hub is where you add your own iMessage commands. User scripts are stored 
 
 ```
 ~/Library/Application Support/Ibot/
-  .env                 # API keys (auto-created)
+  config.env           # API keys (auto-created, visible in Finder)
   .state.json          # poll watermark
   .gui_settings.json   # dashboard toggles
   scripts/hub/         # your Script Hub scripts
@@ -24,7 +24,7 @@ Script Hub is where you add your own iMessage commands. User scripts are stored 
     json/
 ```
 
-The app creates this folder on first launch. You can edit `.env` from **Permissions → Edit .env**.
+The app creates this folder on first launch. You can edit `config.env` from **Permissions → Edit config**.
 
 ## IbotScript format (recommended)
 

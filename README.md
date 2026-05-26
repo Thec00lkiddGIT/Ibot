@@ -32,16 +32,16 @@ macOS iMessage selfbot. Watches your local Messages database and replies through
 
 2. **Automation** - macOS will prompt the first time the bot sends a message. Allow **Terminal** (or your runner) to control **Messages**.
 
-3. **API keys (`.env`)** - created automatically on first launch:
+3. **API keys (`config.env`)** - created automatically on first launch:
 
    ```
-   ~/Library/Application Support/Ibot/.env
+   ~/Library/Application Support/Ibot/config.env
    ```
 
-   Open Ibot → **Permissions** → **Edit .env**, or in Terminal:
+   Open Ibot → **Permissions** → **Edit config**, or in Terminal:
 
    ```bash
-   open -e ~/Library/Application\ Support/Ibot/.env
+   open -e ~/Library/Application\ Support/Ibot/config.env
    ```
 
    Dev installs can still use a project-root `.env`; it is copied to Application Support the first time the app runs.
