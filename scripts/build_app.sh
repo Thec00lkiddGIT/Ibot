@@ -1,17 +1,19 @@
 #!/bin/bash
-# Build Ibot.app on the Desktop (double-click to open native GUI).
+# Build Ibot.app for distribution (optionally bundles .venv for pywebview).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+RELEASE="${RELEASE:-0}"
 APP="$ROOT/Ibot.app"
 DESKTOP_APP="$HOME/Desktop/Ibot.app"
 MACOS="$APP/Contents/MacOS"
 RES="$APP/Contents/Resources"
+VERSION="${IBOT_VERSION:-1.0.0}"
 
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES"
 
-cat > "$APP/Contents/Info.plist" <<'PLIST'
+cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -27,9 +29,9 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>1.0</string>
+  <string>${VERSION}</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>${VERSION}</string>
   <key>LSMinimumSystemVersion</key>
   <string>12.0</string>
   <key>NSHighResolutionCapable</key>
@@ -44,7 +46,6 @@ cat > "$MACOS/Ibot" <<'LAUNCHER'
 #!/bin/bash
 APP_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 BUNDLE_ROOT="$(cd "$(dirname "$0")/../Resources/Ibot" && pwd)"
-# Dev: Ibot.app lives inside the project folder - use live source.
 PARENT="$(dirname "$APP_DIR")"
 if [ -f "$PARENT/gui.py" ]; then
   ROOT="$PARENT"
@@ -58,12 +59,12 @@ export IBOT_GUI_REEXEC=1
 PY="/usr/bin/python3"
 if [ -x "$ROOT/.venv/bin/python3" ]; then
   PY="$ROOT/.venv/bin/python3"
-elif ! "$PY" -c "import tkinter" 2>/dev/null; then
+elif ! "$PY" -c "import webview" 2>/dev/null; then
   for candidate in \
     /Library/Frameworks/Python.framework/Versions/3.14/bin/python3 \
     /Library/Frameworks/Python.framework/Versions/3.13/bin/python3 \
     /Library/Frameworks/Python.framework/Versions/3.12/bin/python3; do
-    if [ -x "$candidate" ] && "$candidate" -c "import tkinter" 2>/dev/null; then
+    if [ -x "$candidate" ] && "$candidate" -c "import webview" 2>/dev/null; then
       PY="$candidate"
       break
     fi
@@ -74,10 +75,6 @@ LAUNCHER
 chmod +x "$MACOS/Ibot"
 
 ICON_SRC="$ROOT/ibot/gui/assets/icon.png"
-ICON_GIF="$ROOT/ibot/gui/assets/icon.gif"
-if [ -f "$ICON_SRC" ] && [ ! -f "$ICON_GIF" ]; then
-  sips -s format gif "$ICON_SRC" --out "$ICON_GIF" >/dev/null 2>&1 || true
-fi
 if [ -f "$ICON_SRC" ]; then
   ICONSET="$APP/Contents/Resources/icon.iconset"
   mkdir -p "$ICONSET"
@@ -90,18 +87,41 @@ if [ -f "$ICON_SRC" ]; then
   rm -rf "$ICONSET"
 fi
 
-# Copy project into app bundle (includes .env)
-rsync -a \
-  --exclude '__pycache__' \
-  --exclude '*.pyc' \
-  --exclude '.venv' \
-  --exclude '.git' \
-  "$ROOT/" "$RES/Ibot/"
+RSYNC_EXCLUDES=(
+  --exclude '__pycache__'
+  --exclude '*.pyc'
+  --exclude '.git'
+  --exclude 'Ibot.app'
+  --exclude 'dist'
+  --exclude '.env'
+  --exclude '.state.json'
+  --exclude '.gui_stats.json'
+  --exclude '.gui_settings.json'
+)
 
-# Symlink/copy app to Desktop for easy access
-rm -rf "$DESKTOP_APP"
-cp -R "$APP" "$DESKTOP_APP"
+if [ "$RELEASE" = "1" ]; then
+  if [ ! -x "$ROOT/.venv/bin/python3" ]; then
+    echo "Release build needs .venv with pywebview. Run: ./scripts/setup_gui.sh" >&2
+    exit 1
+  fi
+  "$ROOT/.venv/bin/python3" -c "import webview" 2>/dev/null || {
+    echo "Release build needs pywebview in .venv. Run: ./scripts/setup_gui.sh" >&2
+    exit 1
+  }
+  rsync -a "${RSYNC_EXCLUDES[@]}" "$ROOT/" "$RES/Ibot/"
+  rsync -a "$ROOT/.venv/" "$RES/Ibot/.venv/"
+else
+  RSYNC_EXCLUDES+=(--exclude '.venv')
+  rsync -a "${RSYNC_EXCLUDES[@]}" "$ROOT/" "$RES/Ibot/"
+fi
 
-echo "Built: $APP"
-echo "Also on Desktop: $DESKTOP_APP"
+if [ "$RELEASE" != "1" ]; then
+  rm -rf "$DESKTOP_APP"
+  cp -R "$APP" "$DESKTOP_APP"
+  echo "Built: $APP"
+  echo "Also on Desktop: $DESKTOP_APP"
+else
+  echo "Built release app: $APP (v${VERSION})"
+fi
+
 echo "Run: python3 gui.py   (or double-click Ibot.app)"

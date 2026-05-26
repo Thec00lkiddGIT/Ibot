@@ -13,6 +13,7 @@ __pycache__/
 
 # macOS app bundle (built locally; may contain .env)
 Ibot.app/
+dist/
 
 # OS
 .DS_Store
