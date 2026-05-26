@@ -1,0 +1,18 @@
+# Local / runtime state
+.state.json
+.gui_stats.json
+.gui_settings.json
+
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS app bundle (built locally; may contain .env)
+Ibot.app/
+
+# OS
+.DS_Store

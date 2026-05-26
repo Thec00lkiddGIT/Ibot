@@ -1,0 +1,36 @@
+{
+  "scripts": [
+    {
+      "id": "echo",
+      "name": "Echo Script",
+      "author": "Ibot",
+      "description": "Echoes your message back",
+      "usage": "!echo <text>",
+      "command": "echo",
+      "help": "Echoes your message back",
+      "commands": [
+        "echo"
+      ],
+      "enabled": true,
+      "format": "ibotscript",
+      "created": "2026-05-26T00:00:00-07:00",
+      "updated": "2026-05-26T17:59:34-05:00"
+    },
+    {
+      "id": "a810aeed2ca1",
+      "created": "2026-05-26T18:03:13-05:00",
+      "format": "ibotscript",
+      "name": "Calculator",
+      "author": "Ibot",
+      "description": "Idk",
+      "usage": "!calc <args>",
+      "command": "calc",
+      "help": "Idk",
+      "commands": [
+        "calc"
+      ],
+      "enabled": true,
+      "updated": "2026-05-26T18:03:13-05:00"
+    }
+  ]
+}

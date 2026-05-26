@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ibot</title>
+  <link rel="icon" type="image/png" href="/static/icon.png" />
+  <link rel="stylesheet" href="/static/app.css" />
+</head>
+<body>
+  <div class="window">
+    <div class="shell">
+      <nav class="sidebar" aria-label="Navigation">
+        <button class="nav-item active" title="Dashboard" data-page="dashboard">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </button>
+        <button class="nav-item" title="Commands" data-page="commands">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+        </button>
+        <button class="nav-item" title="Script Hub" data-page="scripts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        </button>
+        <button class="nav-item" title="Permissions" data-page="perms">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </button>
+      </nav>
+
+      <main class="main">
+        <section id="page-dashboard" class="page active">
+          <h1 class="greeting">Hello, <span id="display-name">Ibot</span> 👋</h1>
+          <div class="alert-banner hidden" id="alert-banner" role="status"></div>
+
+          <div class="grid">
+            <div class="profile-card glass">
+              <div class="profile-top">
+                <div class="avatar" id="avatar"><img src="/static/icon.png" alt="Ibot" /></div>
+                <div class="profile-meta">
+                  <h2 id="profile-name">Ibot</h2>
+                  <p class="handle" id="profile-handle">@mac</p>
+                  <div class="badges">
+                    <span class="badge" id="status-badge">Stopped</span>
+                    <span class="badge muted" id="fda-badge">FDA …</span>
+                  </div>
+                </div>
+              </div>
+              <div class="profile-actions">
+                <button type="button" class="btn primary" id="btn-start">Start bot</button>
+                <button type="button" class="btn ghost" id="btn-stop" disabled>Stop</button>
+              </div>
+              <dl class="profile-stats-row">
+                <div><dt>Last ROWID</dt><dd id="last-rowid">-</dd></div>
+                <div><dt>Host app</dt><dd id="host-app">-</dd></div>
+              </dl>
+              <div class="rings">
+                <div class="ring" data-pct="0" id="ring-commands">
+                  <svg viewBox="0 0 36 36"><path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="fg" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="ring-label"><strong id="commands-count">0</strong>/500<br>COMMANDS</span>
+                </div>
+                <div class="ring" data-pct="0" id="ring-messages">
+                  <svg viewBox="0 0 36 36"><path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/><path class="fg" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                  <span class="ring-label"><strong id="messages-count">0</strong>/5000<br>SEEN</span>
+                </div>
+              </div>
+            </div>
+
+            <aside class="notify-panel glass">
+              <header class="notify-header">
+                <span>🔔</span>
+                <h3>Notification Center</h3>
+                <span class="rocket">🚀</span>
+              </header>
+              <div class="notify-list" id="notify-list"></div>
+            </aside>
+          </div>
+
+          <footer class="bottom-bar glass">
+            <span class="version" id="version">v1.0.0</span>
+            <span class="sep">·</span>
+            <span><strong id="commands-used-footer">0</strong> commands used</span>
+            <label class="toggle-row">
+              <span>React to my messages (--self)</span>
+              <input type="checkbox" id="toggle-self" />
+              <span class="toggle"></span>
+            </label>
+            <label class="toggle-row">
+              <span>Verbose logging</span>
+              <input type="checkbox" id="toggle-verbose" checked />
+              <span class="toggle"></span>
+            </label>
+            <label class="toggle-row">
+              <span>Catch up from saved state</span>
+              <input type="checkbox" id="toggle-catchup" />
+              <span class="toggle"></span>
+            </label>
+          </footer>
+        </section>
+
+        <section id="page-commands" class="page">
+          <h2>Commands</h2>
+          <p class="muted">Prefix every command with <code>!</code> in iMessage. Custom hub scripts have a blue badge.</p>
+          <div class="cmd-scroll">
+            <ul class="cmd-list" id="cmd-list"></ul>
+          </div>
+        </section>
+
+        <section id="page-scripts" class="page">
+          <header class="hub-header">
+            <div>
+              <h2>Script Hub</h2>
+              <p class="muted">Write custom commands like Nighty scripts. Full walkthrough: <code>IbotScript Guide.md</code> on your Desktop.</p>
+            </div>
+            <button type="button" class="btn primary" id="btn-script-new">New script</button>
+          </header>
+          <div class="hub-layout">
+            <aside class="hub-list glass">
+              <h3>Script hub</h3>
+              <ul id="hub-script-list" class="hub-items"></ul>
+            </aside>
+            <div class="hub-editor glass">
+              <div class="hub-form-row hub-meta-row">
+                <label>Script name <input type="text" id="script-name" placeholder="My Script" autocomplete="off" /></label>
+                <label>Author <input type="text" id="script-author" placeholder="Ibot" autocomplete="off" /></label>
+              </div>
+              <div class="hub-form-row">
+                <label>Description <input type="text" id="script-description" placeholder="What this script does" autocomplete="off" /></label>
+                <label>Usage <input type="text" id="script-usage" placeholder="!mycommand &lt;args&gt;" autocomplete="off" /></label>
+              </div>
+              <div class="hub-form-row">
+                <label>Primary command <input type="text" id="script-command" placeholder="mycommand" autocomplete="off" /></label>
+                <label class="toggle-row hub-enable">
+                  <span>Enabled</span>
+                  <input type="checkbox" id="script-enabled" checked />
+                  <span class="toggle"></span>
+                </label>
+              </div>
+              <label class="hub-code-label">Python <span class="muted">- use <code>@ibotScript</code> and <code>@bot.command</code>, then call your entry function at the end</span></label>
+              <textarea id="script-code" class="hub-code" spellcheck="false"></textarea>
+              <div class="hub-test-row">
+                <label>Test args <input type="text" id="script-test-args" placeholder="hello world" autocomplete="off" /></label>
+                <span class="hub-test-out muted" id="script-test-out"></span>
+              </div>
+              <div class="hub-actions">
+                <button type="button" class="btn primary" id="btn-script-save">Save to hub</button>
+                <button type="button" class="btn ghost" id="btn-script-test">Test</button>
+                <button type="button" class="btn ghost danger" id="btn-script-delete">Delete</button>
+              </div>
+              <p class="hub-status muted" id="script-status"></p>
+            </div>
+          </div>
+        </section>
+
+        <section id="page-perms" class="page">
+          <h2>Permissions</h2>
+          <div class="perm-cards" id="perm-cards"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
