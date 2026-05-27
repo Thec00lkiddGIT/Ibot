@@ -19,6 +19,8 @@ def prepare_runtime(*, autostart: bool | None = None) -> None:
         include_self=bool(settings["include_self"]),
         verbose=bool(settings["verbose"]),
         catch_up=bool(settings["catch_up"]),
+        afk_enabled=bool(settings.get("afk_enabled", False)),
+        afk_message=str(settings.get("afk_message", "")),
     )
 
     should_start = settings["autostart"] if autostart is None else autostart

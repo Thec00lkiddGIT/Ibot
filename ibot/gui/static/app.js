@@ -1,5 +1,7 @@
 const API = "";
 let lastEventId = 0;
+let lastEventSession = "";
+let lastActivityLine = 0;
 let activeScriptId = "";
 let hubScripts = [];
 
@@ -80,10 +82,48 @@ function prependEvents(events) {
   }
 }
 
+function prependActivity(entry) {
+  const list = el("notify-list");
+  if (!list) return;
+  const key = `log-${entry.line}`;
+  if (list.querySelector(`[data-id="${key}"]`)) return;
+  const card = document.createElement("article");
+  card.className = `notify-card ${entry.kind || "info"} activity-log`;
+  card.dataset.id = key;
+  card.innerHTML = `
+    <h4>Activity</h4>
+    <p>${escapeHtml(entry.text || "")}</p>
+  `;
+  list.prepend(card);
+  while (list.children.length > 60) {
+    list.removeChild(list.lastChild);
+  }
+}
+
 async function pollEvents() {
   try {
     const data = await api(`/api/events?after=${lastEventId}`);
+    const session = data.session || "";
+    const latestId = data.latest_id ?? 0;
+    if (session && session !== lastEventSession) {
+      lastEventSession = session;
+      lastEventId = 0;
+    } else if (latestId > 0 && latestId < lastEventId) {
+      lastEventId = 0;
+    }
     prependEvents(data.events || []);
+  } catch (_) {
+    /* server down */
+  }
+}
+
+async function pollActivityLog() {
+  try {
+    const data = await api(`/api/activity-log?after=${lastActivityLine}`);
+    for (const entry of data.entries || []) {
+      prependActivity(entry);
+      lastActivityLine = Math.max(lastActivityLine, entry.line || 0);
+    }
   } catch (_) {
     /* server down */
   }
@@ -218,6 +258,36 @@ function applyStatus(s) {
   el("toggle-verbose").checked = !!s.verbose;
   el("toggle-catchup").checked = !!s.catch_up;
 
+  const afkBtn = el("btn-afk");
+  const afkMsg = el("afk-message");
+  const afkNav = el("nav-afk");
+  if (afkBtn) {
+    afkBtn.classList.toggle("on", !!s.afk_enabled);
+    afkBtn.textContent = s.afk_enabled ? "AFK ON" : "AFK";
+  }
+  if (afkNav) {
+    afkNav.classList.toggle("afk-on", !!s.afk_enabled);
+  }
+  const afkBadge = el("afk-status-badge");
+  const afkStatusText = el("afk-status-text");
+  if (afkBadge) {
+    afkBadge.textContent = s.afk_enabled ? "On" : "Off";
+    afkBadge.className = "badge " + (s.afk_enabled ? "on" : "muted");
+  }
+  if (afkStatusText) {
+    afkStatusText.textContent = s.afk_enabled
+      ? "Sending your message to everyone who texts you."
+      : "Turn on AFK to send your message automatically.";
+  }
+  if (afkMsg && document.activeElement !== afkMsg) {
+    afkMsg.value = s.afk_message || "";
+  }
+
+  if (s.session && s.session !== lastEventSession) {
+    lastEventSession = s.session;
+    lastEventId = 0;
+  }
+
   const banner = el("alert-banner");
   if (banner) {
     let msg = "";
@@ -235,6 +305,9 @@ function applyStatus(s) {
       msg = s.error;
     } else if (!s.running) {
       msg = "Bot is stopped. Click Start bot (or relaunch the app).";
+      kind = "warn";
+    } else if (s.afk_enabled) {
+      msg = "AFK is on — auto-replying to incoming messages only.";
       kind = "warn";
     } else if (!s.include_self) {
       msg =
@@ -317,6 +390,23 @@ function setupControls() {
   bindToggle("toggle-self", "include_self");
   bindToggle("toggle-verbose", "verbose");
   bindToggle("toggle-catchup", "catch_up");
+
+  el("btn-afk")?.addEventListener("click", async () => {
+    try {
+      const s = await api("/api/status");
+      await postControl({ action: "settings", afk_enabled: !s.afk_enabled });
+    } catch (_) {
+      /* ignore */
+    }
+  });
+
+  let afkSaveTimer = null;
+  el("afk-message")?.addEventListener("input", (e) => {
+    clearTimeout(afkSaveTimer);
+    afkSaveTimer = setTimeout(() => {
+      postControl({ action: "settings", afk_message: e.target.value });
+    }, 400);
+  });
 }
 
 function setScriptStatus(msg, isError) {
@@ -486,3 +576,5 @@ refreshStatus();
 refreshScripts();
 setInterval(refreshStatus, 2000);
 setInterval(pollEvents, 800);
+setInterval(pollActivityLog, 800);
+pollActivityLog();

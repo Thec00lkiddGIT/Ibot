@@ -20,6 +20,8 @@ DEFAULT_GUI_SETTINGS = {
     "verbose": True,
     "catch_up": False,
     "autostart": True,
+    "afk_enabled": False,
+    "afk_message": "I'm AFK right now — I'll reply when I'm back.",
 }
 
 

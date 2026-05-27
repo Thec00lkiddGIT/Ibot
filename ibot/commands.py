@@ -14,6 +14,7 @@ from ibot.glcheck import bulk_reply, check_reply
 from ibot.qr import prepare_qr
 from ibot.randomword import word_reply
 from ibot.youtube import youtube_reply
+from ibot.osint import credits_reply, search_reply
 from ibot.send import send_reply, send_reply_with_attachment
 from ibot.typewrite import run_typewrite
 from ibot.weather import weather_reply
@@ -230,6 +231,44 @@ def handle_command(message: IncomingMessage) -> CommandResult:
             )
         return CommandResult(handled=True, typewrite_text=args)
 
+    if name == "osint":
+        parts = args.split(None, 1)
+        if not parts:
+            return CommandResult(
+                handled=True,
+                reply=(
+                    "Usage:\n"
+                    "!osint email <address>\n"
+                    "!osint phone <number>\n"
+                    "!osint username <handle>\n"
+                    "!osint name <full name>\n"
+                    "!osint wallet <address>\n"
+                    "!osint credits"
+                ),
+            )
+        sub = parts[0].lower()
+        arg = parts[1].strip() if len(parts) > 1 else ""
+        try:
+            if sub in ("credits", "credit", "balance"):
+                reply = credits_reply()
+                return CommandResult(handled=True, reply=reply)
+            premium = False
+            if sub == "premium" and arg:
+                inner = arg.split(None, 1)
+                if len(inner) < 2:
+                    return CommandResult(
+                        handled=True,
+                        reply="Usage: !osint premium <email|phone|username|name|wallet> <query>",
+                    )
+                sub, arg = inner[0].lower(), inner[1].strip()
+                premium = True
+            chunks = search_reply(sub, arg, premium=premium)
+        except ValueError as exc:
+            return CommandResult(handled=True, reply=str(exc))
+        except RuntimeError as exc:
+            return CommandResult(handled=True, reply=f"OSINT error: {exc}")
+        return CommandResult(handled=True, replies=tuple(chunks))
+
     from ibot.script_hub import dispatch_hub_command
 
     try:
@@ -304,9 +343,9 @@ def _send_command_result(message: IncomingMessage, result: CommandResult) -> boo
                 message.chat_guid,
                 message.chat_identifier,
                 message.handle_id,
-                f"QR send failed: {exc}",
+                f"Attachment send failed: {exc}",
             )
-            print(f"  qr send failed: {exc}", file=sys.stderr)
+            print(f"  attachment send failed: {exc}", file=sys.stderr)
         finally:
             path.unlink(missing_ok=True)
         return True

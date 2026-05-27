@@ -259,6 +259,84 @@ body {
   cursor: not-allowed;
 }
 
+.nav-item.afk-on {
+  color: var(--warning, #f59e0b);
+  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.45);
+}
+
+.btn.afk {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+}
+
+.btn.afk.on {
+  background: var(--warning, #f59e0b);
+  color: #111;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.35);
+}
+
+.btn.afk.large {
+  padding: 12px 28px;
+  font-size: 1rem;
+  min-width: 120px;
+}
+
+.afk-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.afk-page {
+  padding: 20px 22px;
+  border-radius: 14px;
+  max-width: 560px;
+}
+
+.afk-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.afk-status-row .badge.on {
+  background: rgba(245, 158, 11, 0.2);
+  color: var(--warning, #f59e0b);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.afk-label {
+  display: block;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: var(--muted);
+}
+
+.afk-message {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 120px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--glass-border);
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.afk-hint {
+  margin: 8px 0 0;
+  font-size: 0.78rem;
+}
+
 .profile-stats-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

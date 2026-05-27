@@ -6,11 +6,14 @@ import re
 import sqlite3
 import threading
 import time
+import uuid
 from collections import deque
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 
 from ibot.commands import PREFIX, dispatch
+from ibot.afk import send_afk_reply
+from ibot.bot_log import set_emitter
 from ibot.db import connect, fetch_batch, max_rowid
 from ibot.permissions import check_access, fda_fix_message, fda_target_for_host, is_app_bundle, open_fda_settings, bundle_fda_python_path
 from ibot.send import check_automation
@@ -39,6 +42,8 @@ class BotSettings:
     verbose: bool = True
     catch_up: bool = False
     running: bool = False
+    afk_enabled: bool = False
+    afk_message: str = ""
 
 
 class BotRuntime:
@@ -47,8 +52,9 @@ class BotRuntime:
         self._settings = BotSettings()
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
-        self._events: deque[BotEvent] = deque(maxlen=80)
+        self._events: deque[BotEvent] = deque(maxlen=200)
         self._event_id = 0
+        self._session = uuid.uuid4().hex[:8]
         self._last_rowid = 0
         self._error: str | None = None
         self._commands_used = 0
@@ -56,6 +62,7 @@ class BotRuntime:
         stats = load_stats()
         self._commands_used = stats["commands_used"]
         self._messages_seen = stats["messages_seen"]
+        set_emitter(self._push_event)
 
     def _now_iso(self) -> str:
         return datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
@@ -90,7 +97,7 @@ class BotRuntime:
             for key, value in kwargs.items():
                 if hasattr(self._settings, key):
                     setattr(self._settings, key, value)
-                    if key in ("include_self", "verbose", "catch_up"):
+                    if key in ("include_self", "verbose", "catch_up", "afk_enabled", "afk_message"):
                         persist[key] = value
             result = BotSettings(**asdict(self._settings))
         if persist:
@@ -127,9 +134,13 @@ class BotRuntime:
             self._thread.join(timeout=3.0)
         self._push_event("info", "Bot stopped", "Polling paused.")
 
-    def events_since(self, after_id: int) -> list[dict]:
+    def events_since(self, after_id: int) -> dict:
         with self._lock:
-            return [e.to_dict() for e in self._events if e.id > after_id]
+            return {
+                "session": self._session,
+                "latest_id": self._event_id,
+                "events": [e.to_dict() for e in self._events if e.id > after_id],
+            }
 
     def status(self) -> dict:
         self._sync_running_state()
@@ -142,6 +153,8 @@ class BotRuntime:
                 "verbose": self._settings.verbose,
                 "catch_up": self._settings.catch_up,
                 "poll": self._settings.poll,
+                "afk_enabled": self._settings.afk_enabled,
+                "afk_message": self._settings.afk_message,
                 "last_rowid": self._last_rowid,
                 "commands_used": self._commands_used,
                 "messages_seen": self._messages_seen,
@@ -157,6 +170,8 @@ class BotRuntime:
                 "python": access.python,
                 "automation_ok": auto_ok,
                 "automation_msg": auto_msg,
+                "session": self._session,
+                "latest_event_id": self._event_id,
             }
 
     def _command_name(self, body: str) -> str | None:
@@ -230,7 +245,11 @@ class BotRuntime:
                     )
 
                 try:
-                    handled = dispatch(message)
+                    handled = False
+                    if not message.is_from_me:
+                        handled = dispatch(message)
+                    elif settings.include_self:
+                        handled = dispatch(message)
                 except Exception as exc:  # noqa: BLE001
                     self._push_event(
                         "error",
@@ -251,6 +270,34 @@ class BotRuntime:
                         source=message.chat_identifier or "iMessage",
                     )
                     self._persist_stats()
+                    continue
+
+                if (
+                    settings.afk_enabled
+                    and not message.is_from_me
+                    and message.body.strip()
+                    and not cmd
+                ):
+                    reply_text = (settings.afk_message or "").strip()
+                    if not reply_text:
+                        continue
+                    try:
+                        method = send_afk_reply(message, reply_text)
+                        self._push_event(
+                            "success",
+                            "AFK reply sent",
+                            f"{who}: {reply_text[:80]}",
+                            source=message.chat_identifier or "iMessage",
+                        )
+                        print(f"  afk send: {method}")
+                    except Exception as exc:  # noqa: BLE001
+                        self._push_event(
+                            "error",
+                            "AFK reply failed",
+                            str(exc),
+                            source=who,
+                        )
+                    continue
 
             if batch.watermark > last_rowid:
                 last_rowid = batch.watermark
@@ -273,10 +320,13 @@ def get_runtime() -> BotRuntime:
     global _runtime
     if _runtime is None:
         _runtime = BotRuntime()
+        set_emitter(_runtime._push_event)
         gui = load_gui_settings()
         _runtime.update_settings(
             include_self=bool(gui["include_self"]),
             verbose=bool(gui["verbose"]),
             catch_up=bool(gui["catch_up"]),
+            afk_enabled=bool(gui.get("afk_enabled", False)),
+            afk_message=str(gui.get("afk_message", "")),
         )
     return _runtime

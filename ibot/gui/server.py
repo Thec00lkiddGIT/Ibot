@@ -62,7 +62,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
             st = rt.status()
             st["display_name"] = os.environ.get("IBOT_DISPLAY_NAME", "Ibot")
             st["handle"] = computer_handle()
-            st["version"] = "1.0.3"
+            st["version"] = "1.0.4"
             st["env_path"] = config_env_path()
             st["app_support"] = str(app_support_dir())
             built_ins = [{"name": n, "help": h, "source": "builtin"} for n, h in COMMANDS]
@@ -113,7 +113,15 @@ class DashboardHandler(BaseHTTPRequestHandler):
         if path == "/api/events":
             qs = parse_qs(parsed.query)
             after = int(qs.get("after", ["0"])[0])
-            _json_response(self, 200, {"events": get_runtime().events_since(after)})
+            _json_response(self, 200, get_runtime().events_since(after))
+            return
+
+        if path == "/api/activity-log":
+            from ibot.bot_log import read_activity_log
+
+            qs = parse_qs(parsed.query)
+            after = int(qs.get("after", ["0"])[0])
+            _json_response(self, 200, {"entries": read_activity_log(after_line=after)})
             return
 
         if path in ("/", "/index.html"):
@@ -213,7 +221,7 @@ class DashboardHandler(BaseHTTPRequestHandler):
 
         if action == "settings":
             allowed = {}
-            for key in ("include_self", "verbose", "catch_up", "poll"):
+            for key in ("include_self", "verbose", "catch_up", "poll", "afk_enabled", "afk_message"):
                 if key in data:
                     allowed[key] = data[key]
             settings = rt.update_settings(**allowed)

@@ -11,4 +11,5 @@ COMMANDS = [
     ("check", "URL filter check (GLSeries)"),
     ("bulk", "Bulk URL check (up to 3)"),
     ("typewrite", "In-place typing animation"),
+    ("osint", "OSINT Industries lookup (email/phone/user/name/wallet)"),
 ]

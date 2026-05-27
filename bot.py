@@ -4,8 +4,29 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
+from pathlib import Path
+
+
+def _reexec_with_project_venv() -> None:
+    if os.environ.get("IBOT_GUI_REEXEC") == "1":
+        return
+    root = Path(__file__).resolve().parent
+    venv_py = root / ".venv" / "bin" / "python3"
+    if not venv_py.is_file():
+        return
+    try:
+        if Path(sys.executable).resolve() == venv_py.resolve():
+            return
+    except OSError:
+        pass
+    os.environ["IBOT_GUI_REEXEC"] = "1"
+    os.execv(str(venv_py), [str(venv_py), *sys.argv])
+
+
+_reexec_with_project_venv()
 
 from ibot.commands import dispatch
 from ibot.db import connect, fetch_batch, max_rowid
@@ -164,7 +185,7 @@ def main() -> int:
 
     mode = "incoming + your sends" if args.self else "incoming only"
     print(f"Mode: {mode}")
-    print("Commands: !ping, !gay, !word, !dadjoke, !qr <text>, !youtube <sub>, !weather <city>, !check <url>, !bulk <urls>, !typewrite <text>")
+    print("Commands: !ping, !gay, !word, !dadjoke, !qr, !youtube, !weather, !check, !bulk, !typewrite, !osint")
     if not args.self:
         print("Note: !typewrite must be sent by you - use --self")
     if not args.self:

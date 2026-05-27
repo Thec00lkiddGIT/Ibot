@@ -69,3 +69,14 @@ def api_ninjas_key() -> str:
             f"Missing API_NINJAS_KEY. Edit {config_env_path()}"
         )
     return key
+
+
+def osint_api_key() -> str:
+    _load_dotenv()
+    key = os.environ.get("OSINT_INDUSTRIES_KEY", "").strip()
+    if not key:
+        raise ValueError(
+            f"Missing OSINT_INDUSTRIES_KEY. Edit {config_env_path()}"
+        )
+    return key
+
