@@ -8,7 +8,7 @@ APP="$ROOT/Ibot.app"
 DESKTOP_APP="$HOME/Desktop/Ibot.app"
 MACOS="$APP/Contents/MacOS"
 RES="$APP/Contents/Resources"
-VERSION="${IBOT_VERSION:-1.0.4}"
+VERSION="${IBOT_VERSION:-1.0.5}"
 
 rm -rf "$APP"
 mkdir -p "$MACOS" "$RES"

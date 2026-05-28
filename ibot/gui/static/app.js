@@ -464,6 +464,8 @@ async function refreshScripts() {
     if (activeScriptId) {
       const current = hubScripts.find((s) => s.id === activeScriptId);
       if (current) loadScriptIntoEditor(current);
+    } else if (hubScripts.length) {
+      loadScriptIntoEditor(hubScripts[0]);
     }
     await refreshStatus();
   } catch (_) {

@@ -18,6 +18,15 @@ def set_emitter(fn: Callable[[str, str, str, str], None] | None) -> None:
     _emit = fn
 
 
+def clear_activity_log() -> None:
+    """Remove persisted activity log (fresh GUI session / release build)."""
+    global _line_no
+    ensure_app_support()
+    path = app_support_dir() / "activity.log"
+    path.write_text("", encoding="utf-8")
+    _line_no = 0
+
+
 def _append_file(kind: str, title: str, body: str, source: str) -> int:
     global _line_no
     ensure_app_support()

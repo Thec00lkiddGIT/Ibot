@@ -102,9 +102,10 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
 
-    from ibot.paths import ensure_env_file, ensure_script_hub
+    from ibot.paths import ensure_env_file, ensure_script_hub, sync_env_from_flx
 
     ensure_env_file()
+    sync_env_from_flx()
     ensure_script_hub()
 
     if args.reset_state:

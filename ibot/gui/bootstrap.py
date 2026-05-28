@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import os
 
-from ibot.paths import ensure_env_file, ensure_script_hub
+from ibot.bot_log import clear_activity_log
+from ibot.paths import ensure_env_file, ensure_script_hub, sync_env_from_flx
 from ibot.runtime import get_runtime
 from ibot.state import load_gui_settings, save_gui_settings
 
@@ -12,7 +13,9 @@ from ibot.state import load_gui_settings, save_gui_settings
 def prepare_runtime(*, autostart: bool | None = None) -> None:
     """Apply persisted toggles and start polling unless disabled."""
     ensure_env_file()
+    sync_env_from_flx()
     ensure_script_hub()
+    clear_activity_log()
     settings = load_gui_settings()
     rt = get_runtime()
     rt.update_settings(

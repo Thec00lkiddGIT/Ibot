@@ -80,3 +80,13 @@ def osint_api_key() -> str:
         )
     return key
 
+
+def poof_api_key() -> str:
+    _load_dotenv()
+    key = os.environ.get("POOF_API_KEY", "").strip()
+    if not key:
+        raise ValueError(
+            f"Missing POOF_API_KEY. Edit {config_env_path()}"
+        )
+    return key
+

@@ -112,6 +112,13 @@ python3 bot.py --catch-up --verbose
 | `!check linewize example.com` | Check one filter only |
 | `!bulk url1 url2` | Bulk check up to 3 URLs |
 | `!typewrite Hello World` | **Edits** your command bubble in place: H → He → Hel → … (1s steps) |
+| `!osint email user@example.com` | OSINT Industries lookup (see `!osint` with no args) |
+| `!help` | List built-in + Script Hub commands |
+| `!echo hello` | Repeat your text |
+| `!httpcat 404` | http.cat status image |
+| `!pokemon pikachu` | PokéAPI stats + sprite (name, id, or `random`) |
+| `!poof` | Remove background from attached image (Poof.bg; `POOF_API_KEY`) |
+| `!screenshot https://example.com` | Page screenshot (Microlink, no key) |
 
 ### Script Hub (IbotScript)
 

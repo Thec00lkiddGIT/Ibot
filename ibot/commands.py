@@ -11,13 +11,19 @@ from pathlib import Path
 from ibot.dadjoke import dadjoke_reply
 from ibot.db import IncomingMessage
 from ibot.glcheck import bulk_reply, check_reply
+from ibot.httpcat import fetch_httpcat_image, httpcat_caption
+from ibot.microlink import screenshot_lookup
+from ibot.osint import credits_reply, search_reply
+from ibot.poof import poof_from_message_rowid
+from ibot.pokemon import pokemon_lookup
 from ibot.qr import prepare_qr
 from ibot.randomword import word_reply
-from ibot.youtube import youtube_reply
-from ibot.osint import credits_reply, search_reply
 from ibot.send import send_reply, send_reply_with_attachment
+from ibot.tempfiles import write_temp_attachment
 from ibot.typewrite import run_typewrite
 from ibot.weather import weather_reply
+from ibot.youtube import youtube_reply
+from ibot.gui.commands_list import COMMANDS
 
 PREFIX = "!"
 BOT_REPLIES = frozenset({"pong"})
@@ -92,6 +98,34 @@ def _parse_command(text: str) -> tuple[str, str]:
     name = parts[0].lower() if parts else ""
     args = parts[1].strip() if len(parts) > 1 else ""
     return name, args
+
+
+def _with_attachment(caption: str, filename: str, data: bytes) -> CommandResult:
+    path = write_temp_attachment(filename, data)
+    return CommandResult(
+        handled=True,
+        reply=caption,
+        attachment_path=str(path),
+    )
+
+
+def _help_text() -> str:
+    from ibot.script_hub import hub_command_specs
+
+    lines = [f"Commands (prefix {PREFIX})", ""]
+    seen: set[str] = set()
+    for cmd, help_text in COMMANDS:
+        if cmd in seen:
+            continue
+        seen.add(cmd)
+        lines.append(f"!{cmd} — {help_text}")
+    for spec in hub_command_specs():
+        name = str(spec.get("name", "")).strip().lower()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        lines.append(f"!{name} — {spec.get('help', '')}")
+    return "\n".join(lines)
 
 
 def _parse_check_args(args: str) -> tuple[str | None, str]:
@@ -230,6 +264,93 @@ def handle_command(message: IncomingMessage) -> CommandResult:
                 reply="Usage: !typewrite <message>\nExample: !typewrite Hello World",
             )
         return CommandResult(handled=True, typewrite_text=args)
+
+    if name == "httpcat":
+        code_s = args.strip()
+        if not code_s:
+            return CommandResult(
+                handled=True,
+                reply="Usage: !httpcat <status code>\nExample: !httpcat 404",
+            )
+        try:
+            code = int(code_s)
+        except ValueError:
+            return CommandResult(
+                handled=True,
+                reply="Status code must be a number (100-599).",
+            )
+        try:
+            image, filename = fetch_httpcat_image(code)
+            return _with_attachment(httpcat_caption(code), filename, image)
+        except ValueError as exc:
+            return CommandResult(handled=True, reply=str(exc))
+        except RuntimeError as exc:
+            return CommandResult(handled=True, reply=f"httpcat error: {exc}")
+
+    if name == "pokemon":
+        query = args.strip()
+        if not query:
+            return CommandResult(
+                handled=True,
+                reply=(
+                    "Usage: !pokemon <name|id|random>\n"
+                    "Examples: !pokemon pikachu  !pokemon 25  !pokemon random"
+                ),
+            )
+        try:
+            text, sprite, sprite_name = pokemon_lookup(query)
+        except ValueError as exc:
+            return CommandResult(handled=True, reply=str(exc))
+        except RuntimeError as exc:
+            return CommandResult(handled=True, reply=f"Pokémon error: {exc}")
+        if sprite:
+            return _with_attachment(text, sprite_name, sprite)
+        return CommandResult(handled=True, reply=text)
+
+    if name == "poof":
+        try:
+            caption, image, filename = poof_from_message_rowid(
+                message.rowid,
+                args,
+                chat_guid=message.chat_guid,
+            )
+            return _with_attachment(caption, filename, image)
+        except ValueError as exc:
+            return CommandResult(
+                handled=True,
+                reply=(
+                    f"{exc}\n"
+                    "Usage: !poof (attach image) "
+                    "[format=png] [channels=rgba] [bg_color=#fff] [size=full] [crop=true]"
+                ),
+            )
+        except RuntimeError as exc:
+            return CommandResult(handled=True, reply=f"Poof error: {exc}")
+
+    if name == "screenshot":
+        if not args.strip():
+            return CommandResult(
+                handled=True,
+                reply="Usage: !screenshot <url>\nExample: !screenshot https://example.com",
+            )
+        try:
+            text, png, filename = screenshot_lookup(args.strip())
+            return _with_attachment(text, filename, png)
+        except ValueError as exc:
+            return CommandResult(handled=True, reply=str(exc))
+        except RuntimeError as exc:
+            return CommandResult(handled=True, reply=f"Screenshot error: {exc}")
+
+    if name == "help":
+        return CommandResult(handled=True, reply=_help_text())
+
+    if name == "echo":
+        if not args.strip():
+            return CommandResult(
+                handled=True,
+                reply="Usage: !echo <text>",
+            )
+        return CommandResult(handled=True, reply=args.strip())
 
     if name == "osint":
         parts = args.split(None, 1)

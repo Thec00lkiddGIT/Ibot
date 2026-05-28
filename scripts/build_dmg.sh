@@ -1,14 +1,24 @@
 #!/bin/bash
 # Build a release DMG for Ibot (self-contained .app with bundled .venv).
+#
+# Release checklist:
+#   - scripts/hub/ has default echo + calc (merged into user hub on launch)
+#   - Wipe activity log so the dashboard feed starts clean
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIST="$ROOT/dist"
-VERSION="${IBOT_VERSION:-1.0.4}"
+VERSION="${IBOT_VERSION:-1.0.5}"
 DMG_NAME="Ibot-${VERSION}.dmg"
 STAGING="$DIST/dmg-staging"
 
 cd "$ROOT"
+
+ACTIVITY_LOG="$HOME/Library/Application Support/Ibot/activity.log"
+if [ -f "$ACTIVITY_LOG" ]; then
+  echo "Wiping activity log: $ACTIVITY_LOG"
+  : >"$ACTIVITY_LOG"
+fi
 
 if [ ! -d .venv ]; then
   echo "Setting up GUI dependencies..."
